@@ -1,93 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
--- Set <space> as the leader key
--- See `:help mapleader`
---
-
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -215,6 +125,15 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+vim.keymap.set('n', '<leader>ut', function()
+  if vim.o.background == 'dark' then
+    vim.o.background = 'light'
+  else
+    vim.o.background = 'dark'
+  end
+  vim.cmd.colorscheme 'gruvbox'
+  print('Toggled background to: ' .. vim.o.background)
+end, { desc = 'Toggle Gruvbox Light/Dark' })
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -259,28 +178,63 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
-  -- NOTE: Plugins can also be added by using a table,
-  -- with the first argument being the link and the following
-  -- keys can be used to configure plugin behavior/loading/etc.
-  --
-  -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
-  --
+  {
+    'hrsh7th/nvim-cmp',
+    dependencies = {
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip',
+    },
+    config = function()
+      local cmp = require 'cmp'
+      local luasnip = require 'luasnip'
+      cmp.setup {
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
+        mapping = cmp.mapping.preset.insert {
+          ['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<S-Tab>'] = cmp.mapping.select_prev_item(),
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+        },
+        sources = {
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' },
+          { name = 'buffer' },
+          { name = 'path' },
+        },
+      }
+    end,
+  },
 
-  -- Alternatively, use `config = function() ... end` for full control over the configuration.
-  -- If you prefer to call `setup` explicitly, use:
-  --    {
-  --        'lewis6991/gitsigns.nvim',
-  --        config = function()
-  --            require('gitsigns').setup({
-  --                -- Your gitsigns configuration here
-  --            })
-  --        end,
-  --    }
-  --
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`.
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
+  -- Formatters
+  {
+    'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    opts = {
+      format_on_save = {
+        timeout_ms = 500,
+        lsp_format = 'fallback',
+      },
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        javascript = { 'prettier' },
+        typescript = { 'prettier' },
+        javascriptreact = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        html = { 'prettier' },
+        css = { 'prettier' },
+        json = { 'prettier' },
+        python = { 'isort', 'black' },
+        markdown = { 'prettier' },
+      },
+    },
+  },
+
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -294,19 +248,20 @@ require('lazy').setup({
     },
   },
 
-  -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
-  --
-  -- This is often very useful to both group configuration, as well as handle
-  -- lazy loading plugins that don't need to be loaded immediately at startup.
-  --
-  -- For example, in the following configuration, we use:
-  --  event = 'VimEnter'
-  --
-  -- which loads which-key before all the UI elements are loaded. Events can be
-  -- normal autocommands events (`:help autocmd-events`).
-  --
-  -- Then, because we use the `opts` key (recommended), the configuration runs
-  -- after the plugin has been loaded as `require(MODULE).setup(opts)`.
+  { -- NVIM Surround
+    'kylechui/nvim-surround',
+    version = '*',
+    event = 'VeryLazy',
+    config = function()
+      require('nvim-surround').setup {}
+    end,
+  },
+
+  { -- NVIM TS Autotag
+    'windwp/nvim-ts-autotag',
+    event = 'InsertEnter',
+    config = true,
+  },
 
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
@@ -571,11 +526,15 @@ require('lazy').setup({
 
           -- Fuzzy find all the symbols in your current document.
           --  Symbols are things like variables, functions, types, etc.
-          map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
+          -- map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
+          map('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
 
           -- Fuzzy find all the symbols in your current workspace.
           --  Similar to document symbols, except searches over your entire project.
-          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
+          -- map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
+          map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+
+          map('<leader>rn', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[R]e[n]ame')
 
           -- Jump to the type of the word under your cursor.
           --  Useful when you're not sure what type a variable is and you want to see
@@ -668,7 +627,7 @@ require('lazy').setup({
       -- LSP servers and clients are able to communicate to each other what features they support.
       --  By default, Neovim doesn't support everything that is in the LSP specification.
       --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
-      --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
+      local lspconfig = require 'lspconfig'
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
       -- Enable the following language servers
@@ -681,36 +640,21 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        ts_ls = {},
-        html = {},
-        eslint = {},
-        cssls = {},
-        tailwindcss = {},
         lua_ls = {
-          -- cmd = { ... },
-          -- filetypes = { ... },
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
+          Lua = { workspace = { checkThirdParty = false }, telemetry = { enable = false } },
         },
+        ts_ls = {}, -- JavaScript/TypeScript
+        html = {},
+        cssls = {},
+        pyright = {}, -- Python
       }
+
+      for name, config in pairs(servers) do
+        lspconfig[name].setup {
+          capabilities = capabilities,
+          settings = config,
+        }
+      end
 
       -- Ensure the servers and tools above are installed
       --
@@ -725,25 +669,37 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
+      -- local ensure_installed = vim.tbl_keys(servers or {})
+      -- vim.list_extend(ensure_installed, {
+      --   'stylua', -- Used to format Lua code
+      -- })
+      -- require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      --
+      -- require('mason-lspconfig').setup {
+      --   ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+      --   automatic_enable = false,
+      --   automatic_installation = false,
+      --   handlers = {
+      --     function(server_name)
+      --       local server = servers[server_name] or {}
+      --       -- This handles overriding only values explicitly passed
+      --       -- by the server configuration above. Useful when disabling
+      --       -- certain features of an LSP (for example, turning off formatting for ts_ls)
+      --       server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+      --       require('lspconfig')[server_name].setup(server)
+      --     end,
+      --   },
+      --}
+      require('mason').setup()
       require('mason-lspconfig').setup {
-        ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-        automatic_enable = false,
-        automatic_installation = false,
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
+        ensure_installed = vim.tbl_keys(servers),
+      }
+      require('mason-tool-installer').setup {
+        ensure_installed = {
+          'stylua', -- Lua formatter
+          'prettier', -- JS/TS/HTML/CSS formatter
+          'isort', -- Python import sorter
+          'black', -- Python formatter
         },
       }
     end,
@@ -890,7 +846,36 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
+  -- Colorscheme
+  {
+    'ellisonleao/gruvbox.nvim',
+    priority = 1000,
+    lazy = false,
+    config = function()
+      require('gruvbox').setup {
+        contrast = 'hard',
+        palette_overrides = {},
+        overrides = {},
+        italic = {
+          strings = false,
+          comments = true,
+          operators = false,
+          folds = true,
+        },
+      }
 
+      vim.o.background = 'dark' -- or "light"
+      vim.cmd.colorscheme 'gruvbox'
+    end,
+  },
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
+    config = function()
+      vim.cmd.colorscheme 'catppuccin-macchiato'
+    end,
+  },
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
@@ -959,7 +944,24 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'javascript',
+        'typescript',
+        'python',
+        'tsx',
+        'xml',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
